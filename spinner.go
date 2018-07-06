@@ -157,9 +157,9 @@ func (s *Spinner) stop(message ...string) {
 
 	// Output the symbol and message depending on the status code
 	if s.exitStatus == errorStatus {
-		color.Red("\r%s %s", s.errorSymbol, s.message)
+		color.HiRed("\r%s %s", s.errorSymbol, s.message)
 	} else {
-		color.Green("\r%s %s", s.successSymbol, s.message)
+		color.HiGreen("\r%s %s", s.successSymbol, s.message)
 	}
 
 	// Show the cursor again

@@ -21,7 +21,7 @@ go get -u github.com/leaanthony/spinner
 
 ### New Spinner
 
-Spinners are created using New(), which takes a message to display.
+Spinners are created using New(message string), which takes a message to display.
 
 ```
   myspinner := spinner.New("Processing images")

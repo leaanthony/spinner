@@ -4,7 +4,10 @@ A simple, configurable, multi-platform terminal spinner.
 
 [![Packagist](https://img.shields.io/packagist/l/doctrine/orm.svg)](https://github.com/leaanthony/spinner/LICENSE)
 
-![demo](spinner.gif)
+## Mac Demo
+![demo](spinner_mac.gif)
+
+See the [Linux](##linux-demo) and [Windows](##windows-demo) demos.
 
 Tested on:
   * Windows 10
@@ -121,6 +124,12 @@ It's possible to reuse an existing spinner by calling the Restart(message string
 ## Rationale
 
 I tried to find a simple, true cross platform spinner for Go that did what I wanted and couldn't find one. I'm sure they exist, but this was fun.
+
+## Linux Demo
+![demo](spinner_ubuntu.gif)
+
+## Windows Demo
+![demo](spinner_windows.gif)
 
 ## With a little help from my friends
 

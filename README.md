@@ -2,7 +2,7 @@
 
 A simple, configurable, multi-platform terminal spinner. 
 
-[![Packagist](https://img.shields.io/packagist/l/doctrine/orm.svg)](https://github.com/leaanthony/spinner/LICENSE)
+[![MIT Licensed](https://img.shields.io/packagist/l/doctrine/orm.svg)](https://github.com/leaanthony/spinner/blob/master/LICENSE)
 
 ## Mac Demo
 ![demo](spinner_mac.gif)

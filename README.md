@@ -4,6 +4,8 @@ A simple, configurable, multi-platform terminal spinner.
 
 [![Packagist](https://img.shields.io/packagist/l/doctrine/orm.svg)](https://github.com/leaanthony/spinner/LICENSE)
 
+![demo](spinner.gif)
+
 Tested on:
   * Windows 10
   * MacOS 10.13.5

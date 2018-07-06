@@ -7,7 +7,7 @@ A simple, configurable, multi-platform terminal spinner.
 ## Mac Demo
 ![demo](spinner_mac.gif)
 
-See the [Linux](##linux-demo) and [Windows](##windows-demo) demos.
+See the [Linux](#linux-demo) and [Windows](#windows-demo) demos.
 
 Tested on:
   * Windows 10

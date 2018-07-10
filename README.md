@@ -76,6 +76,27 @@ This has the same functionality as Success(), but will print an error symbol and
   myspinner.Error("Too many lolcats!")
 ```
 
+### Success/Error using custom formatter
+
+In addition to Success() and Error(), there is Successf() and Errorf(). Both take the same parameters: (format string, args ...interface{}). This is identical to fmt.Sprintf (which it uses under the hood). 
+
+```
+	// Formatted Success
+	a = spinner.New("This is a formatted custom success message")
+	a.Start()
+	time.Sleep(time.Second * 2)
+	spin := "Spinner"
+	awesome := "Awesome"
+	a.Successf("%s is %s!", spin, awesome)
+
+	// Formatted Error
+	a = spinner.New("This is a formatted custom error message")
+	a.Start()
+	secs := 2
+	time.Sleep(time.Second * time.Duration(secs))
+	a.Errorf("I waited %d seconds to error!", secs)
+```
+
 ### Custom Success/Error Symbols
 
 Both Success() and Error() use symbols (as well as colour) to indicate their status.

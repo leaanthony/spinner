@@ -173,9 +173,25 @@ func (s *Spinner) Error(message ...string) {
 	s.stop(message...)
 }
 
+// Errorf stops the spinner, formats and sets the status code to error
+// Formats and prints the given message instead of current message
+func (s *Spinner) Errorf(format string, args ...interface{}) {
+	s.exitStatus = errorStatus
+	message := fmt.Sprintf(format, args...)
+	s.stop(message)
+}
+
 // Success stops the spinner and sets the status code to success
 // Optional message to print instead of current message
 func (s *Spinner) Success(message ...string) {
 	s.exitStatus = successStatus
 	s.stop(message...)
+}
+
+// Successf stops the spinner, formats and sets the status code to success
+// Formats and prints the given message instead of current message
+func (s *Spinner) Successf(format string, args ...interface{}) {
+	s.exitStatus = successStatus
+	message := fmt.Sprintf(format, args...)
+	s.stop(message)
 }

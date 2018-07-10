@@ -33,6 +33,21 @@ func main() {
 	time.Sleep(time.Second * 2)
 	a.Error("Much sad")
 
+	// Formatted Success
+	a = spinner.New("This is a formatted custom success message")
+	a.Start()
+	time.Sleep(time.Second * 2)
+	spin := "Spinner"
+	awesome := "Awesome"
+	a.Successf("%s is %s!", spin, awesome)
+
+	// Formatted Error
+	a = spinner.New("This is a formatted custom error message")
+	a.Start()
+	secs := 2
+	time.Sleep(time.Second * time.Duration(secs))
+	a.Errorf("I waited %d seconds to error!", secs)
+
 	// Reuse spinner!
 	a.Restart("Spinner reuse FTW!")
 	time.Sleep(time.Second * 2)

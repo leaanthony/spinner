@@ -47,7 +47,8 @@ type Spinner struct {
 	errorSymbol   string        // Symbol printed when Error() called
 	spinFrames    []string      // Spinset frames
 	spinSpeed     int           // Delay between spinner updates in milliseconds
-	currentLine   string
+	currentLine   string        // The current line being displayed
+	running       bool          // Indicates if the spinner is running
 }
 
 // NewSpinner creates a new spinner and sets up the default values
@@ -96,6 +97,9 @@ func (s *Spinner) Start() {
 	// make it look tidier
 	hideCursor()
 
+	// Store the fact we are now running
+	s.running = true
+
 	// spawn off a goroutine to handle the animation
 	go func() {
 
@@ -123,6 +127,10 @@ func (s *Spinner) Start() {
 
 			// If we get a stop signal
 			case <-s.stopChan:
+
+				// Store the fact we aren't running
+				s.running = false
+
 				// Quit the animation
 				return
 			}
@@ -144,12 +152,21 @@ func (s *Spinner) Restart(message string) {
 // Error status will print the message in red
 func (s *Spinner) stop(message ...string) {
 
-	// Issue stop signal to animation
-	s.stopChan <- struct{}{}
+	var finalMessage = s.message
 
 	// If we have an optional message, save it
 	if len(message) > 0 {
-		s.message = message[0]
+		finalMessage = message[0]
+	}
+
+	// Ensure we are running before issuing stop signal
+	if s.running {
+		// Issue stop signal to animation
+		s.stopChan <- struct{}{}
+	} else {
+		// We tried to stop a non-running spinner
+		s.exitStatus = errorStatus
+		finalMessage = finalMessage + " (Attempted to stop non-running spinner)"
 	}
 
 	// Clear the line, because a new message may be shorter than the original
@@ -157,9 +174,9 @@ func (s *Spinner) stop(message ...string) {
 
 	// Output the symbol and message depending on the status code
 	if s.exitStatus == errorStatus {
-		color.HiRed("\r%s %s", s.errorSymbol, s.message)
+		color.HiRed("\r%s %s", s.errorSymbol, finalMessage)
 	} else {
-		color.HiGreen("\r%s %s", s.successSymbol, s.message)
+		color.HiGreen("\r%s %s", s.successSymbol, finalMessage)
 	}
 
 	// Show the cursor again

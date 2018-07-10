@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"runtime"
 	"time"
 
@@ -78,4 +79,20 @@ func main() {
 	a.Restart("Custom spinner + Error Symbol!")
 	time.Sleep(time.Second * 2)
 	a.Error()
+
+	fmt.Println("")
+	fmt.Println("If we stop a non-running spinner it should issue a warning.")
+	fmt.Println("Next we will check that all stop-related functions issue the warning.")
+	fmt.Println("")
+
+	// Ensure we don't hang if calling success/error on non-running spinner
+	a = spinner.New("Test Success()")
+	a.Success()
+	a = spinner.New("Test Error()")
+	a.Error()
+	a = spinner.New("Test Custom messages")
+	a.Success(`Test Success("")`)
+	a.Error(`Test Error("")`)
+	a.Successf(`Test Successf("")`)
+	a.Errorf(`Test Errorf("")`)
 }

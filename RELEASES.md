@@ -1,6 +1,6 @@
 # Releases
 
-## 0.3
+## 0.3 - 15 July 2018
 Made message for New/NewSpinner optional
 Start() now takes an optional message
 Removed Restart()

@@ -31,7 +31,7 @@ func getDefaultSpinnerFrames() []string {
 func getStatusSymbols() (successSymbol, errorSymbol string) {
 	switch runtime.GOOS {
 	case "windows":
-		return " ", " "
+		return ">", "!"
 	default:
 		return "✓", "✗"
 	}
@@ -52,8 +52,13 @@ type Spinner struct {
 }
 
 // NewSpinner creates a new spinner and sets up the default values
-func NewSpinner(message string) *Spinner {
+func NewSpinner(optionalMessage ...string) *Spinner {
 	successSymbol, errorSymbol := getStatusSymbols()
+	// Blank message by default
+	message := ""
+	if len(optionalMessage) > 0 {
+		message = optionalMessage[0]
+	}
 	return &Spinner{
 		message:       message,
 		stopChan:      make(chan struct{}),
@@ -66,8 +71,8 @@ func NewSpinner(message string) *Spinner {
 
 // New is solely here to make code cleaner for importers
 // EG: spinner.New(...)
-func New(message string) *Spinner {
-	return NewSpinner(message)
+func New(message ...string) *Spinner {
+	return NewSpinner(message...)
 }
 
 // SetSuccessSymbol sets the symbol displayed on success
@@ -92,7 +97,12 @@ func (s *Spinner) SetSpinSpeed(ms int) {
 }
 
 // Start the spinner!
-func (s *Spinner) Start() {
+func (s *Spinner) Start(optionalMessage ...string) {
+
+	// If we have a message, set it
+	if len(optionalMessage) > 0 {
+		s.message = optionalMessage[0]
+	}
 
 	// make it look tidier
 	hideCursor()
@@ -136,13 +146,6 @@ func (s *Spinner) Start() {
 			}
 		}
 	}()
-}
-
-// Restart sets the message and starts the spinner again.
-// Useful for reusing a single spinner
-func (s *Spinner) Restart(message string) {
-	s.message = message
-	s.Start()
 }
 
 // stop will stop the spinner.

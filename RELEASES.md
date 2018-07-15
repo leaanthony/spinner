@@ -1,5 +1,12 @@
 # Releases
 
+## 0.3
+Made message for New/NewSpinner optional
+Start() now takes an optional message
+Removed Restart()
+Use '>' as defualt success symbol on Windows
+Use '!' as defualt error symbol on Windows
+
 ## 0.2.1 - 11 July 2018
 Issue warning if attempting to stop a non-running spinner
 

@@ -50,9 +50,15 @@ func main() {
 	a.Errorf("I waited %d seconds to error!", secs)
 
 	// Reuse spinner!
-	a.Restart("Spinner reuse FTW!")
+	a.Start("Spinner reuse FTW!")
 	time.Sleep(time.Second * 2)
 	a.Success()
+
+	// Spinner with no initial message
+	a = spinner.New()
+	a.Start("Message is now optional on Spinner creation")
+	time.Sleep(time.Second * 2)
+	a.Success("Awesome! More flexibility!")
 
 	// Custom Spinner chars + symbols
 	switch runtime.GOOS {
@@ -63,7 +69,7 @@ func main() {
 		a.SetSpinFrames([]string{"🌕", "🌖", "🌗", "🌘", "🌑", "🌒", "🌓", "🌔"})
 		a.SetSuccessSymbol("👍")
 	}
-	a.Restart("Custom spinner + Success Symbol!")
+	a.Start("Custom spinner + Success Symbol!")
 	time.Sleep(time.Second * 2)
 	a.Success()
 
@@ -76,7 +82,7 @@ func main() {
 		a.SetSpinFrames([]string{"🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", "🕛"})
 		a.SetErrorSymbol("💩")
 	}
-	a.Restart("Custom spinner + Error Symbol!")
+	a.Start("Custom spinner + Error Symbol!")
 	time.Sleep(time.Second * 2)
 	a.Error()
 

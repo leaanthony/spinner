@@ -3,6 +3,7 @@ package spinner
 import (
 	"fmt"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -96,9 +97,25 @@ func (s *Spinner) SetSpinSpeed(ms int) {
 	s.spinSpeed = ms
 }
 
+// UpdateMessage sets the spinner message
+// Can be flickery if not appending so use with care
+func (s *Spinner) UpdateMessage(message string) {
+	// Clear line if this isn't an append
+	// for smoother screen updates
+	if strings.Index(message, s.message) != 0 {
+		s.clearCurrentLine()
+	}
+	s.message = message
+}
+
 // Start the spinner!
 func (s *Spinner) Start(optionalMessage ...string) {
 
+	// Error if trying to start an already running spinner
+	if s.running {
+		s.Error("Tried to start a running spinner with message: " + s.message)
+		return
+	}
 	// If we have a message, set it
 	if len(optionalMessage) > 0 {
 		s.message = optionalMessage[0]

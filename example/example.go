@@ -86,6 +86,22 @@ func main() {
 	time.Sleep(time.Second * 2)
 	a.Error()
 
+	// Updating messages
+	updateMessage := "2"
+	a.Start(updateMessage)
+	time.Sleep(time.Second * 1)
+	updateMessage += " 4"
+	a.UpdateMessage(updateMessage)
+	time.Sleep(time.Second * 1)
+	updateMessage += " 6"
+	a.UpdateMessage(updateMessage)
+	time.Sleep(time.Second * 1)
+	updateMessage += " 8"
+	a.UpdateMessage(updateMessage)
+	time.Sleep(time.Second * 1)
+	updateMessage += " Motorway!"
+	a.Success(updateMessage)
+
 	fmt.Println("")
 	fmt.Println("If we stop a non-running spinner it should issue a warning.")
 	fmt.Println("Next we will check that all stop-related functions issue the warning.")

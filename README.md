@@ -24,19 +24,42 @@ go get -u github.com/leaanthony/spinner
 
 ### New Spinner
 
-Spinners are created using New(message string), which takes a message to display.
+Spinners are created using New(optionalMessage string), which takes an optional message to display.
 
 ```
   myspinner := spinner.New("Processing images")
+```
+or
+```
+  myspinner := spinner.New()
 ```
 
 ### Starting the spinner
 
-To start the spinner, simply call Start().
+To start the spinner, simply call Start(optionalMessage string). If the optional message is passed, it will be used as the spinner message.
 
 ```
   myspinner := spinner.New("Processing images")
   myspinner.Start()
+```
+is equivalent to
+```
+  myspinner := spinner.New()
+  myspinner.Start("Processing images")
+```
+It's possible to reuse an existing spinner by calling Start() on a spinner that has been previously stopped with Error() or Success(). 
+
+## Updating the spinner message
+
+The spinner message can be updated with UpdateMessage(string) whilst running. 
+
+```
+  myspinner := spinner.New()
+  myspinner.Start("Processing images")
+  time.Sleep(time.Second * 2)
+  myspinner.UpdateMessage("Adding funny text")
+  time.Sleep(time.Second * 2)
+  myspinner.Success("Your memes are ready")
 ```
 
 ### Stop with Success 

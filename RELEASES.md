@@ -1,7 +1,10 @@
 # Releases
 
-## 0.4 
+## 0.4 - 17 July 2018
 Added UpdateMessage(string)
+Handle ctrl-c interrupts
+Added SetAbortMessage(string) to set message shown on ctrl-c
+Updated documentation
 
 ## 0.3 - 15 July 2018
 Made message for New/NewSpinner optional

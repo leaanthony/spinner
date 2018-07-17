@@ -12,13 +12,13 @@ import (
 // Specialise the type
 type status int
 
-// Status code constants
+// Status code constants.
 const (
 	errorStatus status = iota
 	successStatus
 )
 
-// Gets the default spinner frames based on the operating system
+// Gets the default spinner frames based on the operating system.
 func getDefaultSpinnerFrames() []string {
 	switch runtime.GOOS {
 	case "windows":
@@ -28,7 +28,7 @@ func getDefaultSpinnerFrames() []string {
 	}
 }
 
-// Gets the default status symbols based on the operating system
+// Gets the default status symbols based on the operating system.
 func getStatusSymbols() (successSymbol, errorSymbol string) {
 	switch runtime.GOOS {
 	case "windows":
@@ -38,7 +38,7 @@ func getStatusSymbols() (successSymbol, errorSymbol string) {
 	}
 }
 
-// Spinner defines our spinner data
+// Spinner defines our spinner data.
 // spinSpeed defaults to 100ms
 type Spinner struct {
 	message       string        // message to display
@@ -52,7 +52,7 @@ type Spinner struct {
 	running       bool          // Indicates if the spinner is running
 }
 
-// NewSpinner creates a new spinner and sets up the default values
+// NewSpinner creates a new spinner and sets up the default values.
 func NewSpinner(optionalMessage ...string) *Spinner {
 	successSymbol, errorSymbol := getStatusSymbols()
 	// Blank message by default
@@ -70,38 +70,38 @@ func NewSpinner(optionalMessage ...string) *Spinner {
 	}
 }
 
-// New is solely here to make code cleaner for importers
+// New is solely here to make code cleaner for importers.
 // EG: spinner.New(...)
 func New(message ...string) *Spinner {
 	return NewSpinner(message...)
 }
 
-// SetSuccessSymbol sets the symbol displayed on success
+// SetSuccessSymbol sets the symbol displayed on success.
 func (s *Spinner) SetSuccessSymbol(symbol string) {
 	s.successSymbol = symbol
 }
 
-// SetErrorSymbol sets the symbol displayed on error
+// SetErrorSymbol sets the symbol displayed on error.
 func (s *Spinner) SetErrorSymbol(symbol string) {
 	s.errorSymbol = symbol
 }
 
-// SetSpinFrames makes the spinner use the given characters
+// SetSpinFrames makes the spinner use the given characters.
 func (s *Spinner) SetSpinFrames(frames []string) {
 	s.spinFrames = frames
 }
 
-// SetSpinSpeed sets the speed of the spinner animation
-// The lower the value, the faster the spin
+// SetSpinSpeed sets the speed of the spinner animation.
+// The lower the value, the faster the spin.
 func (s *Spinner) SetSpinSpeed(ms int) {
 	s.spinSpeed = ms
 }
 
-// UpdateMessage sets the spinner message
-// Can be flickery if not appending so use with care
+// UpdateMessage sets the spinner message.
+// Can be flickery if not appending so use with care.
 func (s *Spinner) UpdateMessage(message string) {
-	// Clear line if this isn't an append
-	// for smoother screen updates
+	// Clear line if this isn't an append.
+	// for smoother screen updates.
 	if strings.Index(message, s.message) != 0 {
 		s.clearCurrentLine()
 	}
@@ -111,7 +111,7 @@ func (s *Spinner) UpdateMessage(message string) {
 // Start the spinner!
 func (s *Spinner) Start(optionalMessage ...string) {
 
-	// Error if trying to start an already running spinner
+	// Error if trying to start an already running spinner.
 	if s.running {
 		s.Error("Tried to start a running spinner with message: " + s.message)
 		return
@@ -121,19 +121,19 @@ func (s *Spinner) Start(optionalMessage ...string) {
 		s.message = optionalMessage[0]
 	}
 
-	// make it look tidier
+	// make it look tidier.
 	hideCursor()
 
-	// Store the fact we are now running
+	// Store the fact we are now running.
 	s.running = true
 
-	// spawn off a goroutine to handle the animation
+	// spawn off a goroutine to handle the animation.
 	go func() {
 
-		// Start at the first frame
+		// Start at the first frame.
 		frameNumber := 0
 
-		// Setup frame ticker
+		// Setup frame ticker.
 		ticker := time.NewTicker(time.Millisecond * time.Duration(s.spinSpeed)).C
 
 		// Let's go!
@@ -168,31 +168,31 @@ func (s *Spinner) Start(optionalMessage ...string) {
 // stop will stop the spinner.
 // The final message will either be the current message
 // or the optional, given message.
-// Success status will print the message in green
-// Error status will print the message in red
+// Success status will print the message in green.
+// Error status will print the message in red.
 func (s *Spinner) stop(message ...string) {
 
 	var finalMessage = s.message
 
-	// If we have an optional message, save it
+	// If we have an optional message, save it.
 	if len(message) > 0 {
 		finalMessage = message[0]
 	}
 
-	// Ensure we are running before issuing stop signal
+	// Ensure we are running before issuing stop signal.
 	if s.running {
-		// Issue stop signal to animation
+		// Issue stop signal to animation.
 		s.stopChan <- struct{}{}
 	} else {
-		// We tried to stop a non-running spinner
+		// We tried to stop a non-running spinner.
 		s.exitStatus = errorStatus
 		finalMessage = finalMessage + " (Attempted to stop non-running spinner)"
 	}
 
-	// Clear the line, because a new message may be shorter than the original
+	// Clear the line, because a new message may be shorter than the original.
 	s.clearCurrentLine()
 
-	// Output the symbol and message depending on the status code
+	// Output the symbol and message depending on the status code.
 	if s.exitStatus == errorStatus {
 		color.HiRed("\r%s %s", s.errorSymbol, finalMessage)
 	} else {
@@ -203,30 +203,30 @@ func (s *Spinner) stop(message ...string) {
 	showCursor()
 }
 
-// Error stops the spinner and sets the status code to error
-// Optional message to print instead of current message
+// Error stops the spinner and sets the status code to error.
+// Optional message to print instead of current message.
 func (s *Spinner) Error(message ...string) {
 	s.exitStatus = errorStatus
 	s.stop(message...)
 }
 
-// Errorf stops the spinner, formats and sets the status code to error
-// Formats and prints the given message instead of current message
+// Errorf stops the spinner, formats and sets the status code to error.
+// Formats and prints the given message instead of current message.
 func (s *Spinner) Errorf(format string, args ...interface{}) {
 	s.exitStatus = errorStatus
 	message := fmt.Sprintf(format, args...)
 	s.stop(message)
 }
 
-// Success stops the spinner and sets the status code to success
-// Optional message to print instead of current message
+// Success stops the spinner and sets the status code to success.
+// Optional message to print instead of current message.
 func (s *Spinner) Success(message ...string) {
 	s.exitStatus = successStatus
 	s.stop(message...)
 }
 
-// Successf stops the spinner, formats and sets the status code to success
-// Formats and prints the given message instead of current message
+// Successf stops the spinner, formats and sets the status code to success.
+// Formats and prints the given message instead of current message.
 func (s *Spinner) Successf(format string, args ...interface{}) {
 	s.exitStatus = successStatus
 	message := fmt.Sprintf(format, args...)

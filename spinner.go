@@ -1,7 +1,11 @@
+// spinner provides visual feedback for command line applications
+
 package spinner
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
 	"runtime"
 	"strings"
 	"time"
@@ -39,7 +43,6 @@ func getStatusSymbols() (successSymbol, errorSymbol string) {
 }
 
 // Spinner defines our spinner data.
-// spinSpeed defaults to 100ms
 type Spinner struct {
 	message       string        // message to display
 	stopChan      chan struct{} // exit channel
@@ -47,9 +50,10 @@ type Spinner struct {
 	successSymbol string        // Symbol printed when Success() called
 	errorSymbol   string        // Symbol printed when Error() called
 	spinFrames    []string      // Spinset frames
-	spinSpeed     int           // Delay between spinner updates in milliseconds
+	spinSpeed     int           // Delay between spinner updates in milliseconds [default 100ms]
 	currentLine   string        // The current line being displayed
 	running       bool          // Indicates if the spinner is running
+	abortMessage  string        // Printed when handling ctrl-c interrupt
 }
 
 // NewSpinner creates a new spinner and sets up the default values.
@@ -67,6 +71,7 @@ func NewSpinner(optionalMessage ...string) *Spinner {
 		errorSymbol:   errorSymbol,
 		spinFrames:    getDefaultSpinnerFrames(),
 		spinSpeed:     100,
+		abortMessage:  "Aborted (ctrl-c)",
 	}
 }
 
@@ -108,6 +113,12 @@ func (s *Spinner) UpdateMessage(message string) {
 	s.message = message
 }
 
+// SetAbortMessage sets the message that gets printed when
+// the user kills the spinners by pressing ctrl-c.
+func (s *Spinner) SetAbortMessage(message string) {
+	s.abortMessage = message
+}
+
 // Start the spinner!
 func (s *Spinner) Start(optionalMessage ...string) {
 
@@ -126,6 +137,16 @@ func (s *Spinner) Start(optionalMessage ...string) {
 
 	// Store the fact we are now running.
 	s.running = true
+
+	// Handle ctrl-c
+	go func() {
+		sigchan := make(chan os.Signal, 10)
+		signal.Notify(sigchan, os.Interrupt)
+		<-sigchan
+		s.Error(s.abortMessage)
+		showCursor()
+		os.Exit(1)
+	}()
 
 	// spawn off a goroutine to handle the animation.
 	go func() {

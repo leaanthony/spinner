@@ -8,9 +8,12 @@ import (
 	"os/signal"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/fatih/color"
+	isatty "github.com/go-isatty"
+	"github.com/leaanthony/synx"
 )
 
 // Specialise the type
@@ -44,16 +47,21 @@ func getStatusSymbols() (successSymbol, errorSymbol string) {
 
 // Spinner defines our spinner data.
 type Spinner struct {
-	message       string        // message to display
-	stopChan      chan struct{} // exit channel
-	exitStatus    status        // Status of exit
-	successSymbol string        // Symbol printed when Success() called
-	errorSymbol   string        // Symbol printed when Error() called
-	spinFrames    []string      // Spinset frames
-	spinSpeed     int           // Delay between spinner updates in milliseconds [default 100ms]
-	currentLine   string        // The current line being displayed
-	running       bool          // Indicates if the spinner is running
-	abortMessage  string        // Printed when handling ctrl-c interrupt
+	message       *synx.String      // message to display
+	stopChan      chan struct{}     // exit channel
+	speedUpdated  *synx.Bool        // Indicates speed has been updated
+	exitStatus    status            // Status of exit
+	successSymbol *synx.String      // Symbol printed when Success() called
+	errorSymbol   *synx.String      // Symbol printed when Error() called
+	spinFrames    *synx.StringSlice // Spinset frames
+	frameNumber   int               // Current frame [default 0]
+	termWidth     *synx.Int         // Terminal width
+	termHeight    *synx.Int         // Terminal Height
+	spinSpeed     *synx.Int         // Delay between spinner updates in milliseconds [default 100ms]
+	currentLine   *synx.String      // The current line being displayed
+	running       *synx.Bool        // Indicates if the spinner is running
+	abortMessage  *synx.String      // Printed when handling ctrl-c interrupt
+	isTerminal    *synx.Bool        // Flag indicating if we are outputting to terminal
 }
 
 // NewSpinner creates a new spinner and sets up the default values.
@@ -65,13 +73,20 @@ func NewSpinner(optionalMessage ...string) *Spinner {
 		message = optionalMessage[0]
 	}
 	return &Spinner{
-		message:       message,
+		message:       synx.NewString(message),
 		stopChan:      make(chan struct{}),
-		successSymbol: successSymbol,
-		errorSymbol:   errorSymbol,
-		spinFrames:    getDefaultSpinnerFrames(),
-		spinSpeed:     100,
-		abortMessage:  "Aborted (ctrl-c)",
+		speedUpdated:  synx.NewBool(true),
+		successSymbol: synx.NewString(successSymbol),
+		errorSymbol:   synx.NewString(errorSymbol),
+		spinFrames:    synx.NewStringSlice(getDefaultSpinnerFrames()),
+		spinSpeed:     synx.NewInt(100),
+		termWidth:     synx.NewInt(1),
+		termHeight:    synx.NewInt(1),
+		abortMessage:  synx.NewString("Aborted."),
+		frameNumber:   0,
+		running:       synx.NewBool(false),
+		currentLine:   synx.NewString(""),
+		isTerminal:    synx.NewBool(isatty.IsTerminal(os.Stdout.Fd())),
 	}
 }
 
@@ -83,107 +98,205 @@ func New(message ...string) *Spinner {
 
 // SetSuccessSymbol sets the symbol displayed on success.
 func (s *Spinner) SetSuccessSymbol(symbol string) {
-	s.successSymbol = symbol
+	s.successSymbol.SetValue(symbol)
+}
+
+// getSuccessSymbol sets the symbol displayed on error.
+func (s *Spinner) getSuccessSymbol() string {
+	return s.successSymbol.GetValue()
 }
 
 // SetErrorSymbol sets the symbol displayed on error.
 func (s *Spinner) SetErrorSymbol(symbol string) {
-	s.errorSymbol = symbol
+	s.errorSymbol.SetValue(symbol)
+}
+
+// getErrorSymbol sets the symbol displayed on error.
+func (s *Spinner) getErrorSymbol() (symbol string) {
+	return s.errorSymbol.GetValue()
 }
 
 // SetSpinFrames makes the spinner use the given characters.
 func (s *Spinner) SetSpinFrames(frames []string) {
-	s.spinFrames = frames
+	s.spinFrames.SetValue(frames)
+}
+
+func (s *Spinner) getNextSpinnerFrame() (result string) {
+	// Check if the current frame is valid. If not, loop to start
+	s.frameNumber = s.frameNumber % s.spinFrames.Length()
+	result = s.spinFrames.GetElement(s.frameNumber)
+	s.frameNumber++
+	return
 }
 
 // SetSpinSpeed sets the speed of the spinner animation.
 // The lower the value, the faster the spin.
 func (s *Spinner) SetSpinSpeed(ms int) {
-	s.spinSpeed = ms
+	// Floor to a speed of 1
+	if ms < 1 {
+		ms = 1
+	}
+	s.spinSpeed.SetValue(ms)
+	s.speedUpdated.SetValue(true)
+}
+
+// getSpinSpeed gets the speed of the spinner animation.
+func (s *Spinner) getSpinSpeed() (ms int) {
+	return s.spinSpeed.GetValue()
 }
 
 // UpdateMessage sets the spinner message.
 // Can be flickery if not appending so use with care.
 func (s *Spinner) UpdateMessage(message string) {
-	// Clear line if this isn't an append.
-	// for smoother screen updates.
-	if strings.Index(message, s.message) != 0 {
-		s.clearCurrentLine()
+	if s.IsTerminal() {
+		// Clear line if this isn't an append.
+		// for smoother screen updates.
+		if strings.Index(message, s.getMessage()) != 0 {
+			s.clearCurrentLine()
+		}
+		s.setMessage(message)
 	}
-	s.message = message
 }
 
 // SetAbortMessage sets the message that gets printed when
 // the user kills the spinners by pressing ctrl-c.
 func (s *Spinner) SetAbortMessage(message string) {
-	s.abortMessage = message
+	s.abortMessage.SetValue(message)
+}
+
+func (s *Spinner) getAbortMessage() string {
+	return s.abortMessage.GetValue()
+}
+
+func (s *Spinner) setMessage(message string) {
+	s.message.SetValue(message)
+}
+
+func (s *Spinner) getMessage() string {
+	return s.message.GetValue()
+}
+
+func (s *Spinner) getRunning() bool {
+	return s.running.GetValue()
+}
+
+func (s *Spinner) setRunning(value bool) {
+	s.running.SetValue(value)
+}
+
+func (s *Spinner) setCurrentLine(line string) {
+	s.currentLine.SetValue(line)
+}
+func (s *Spinner) getCurrentLine() string {
+	return s.currentLine.GetValue()
+}
+
+func (s *Spinner) IsTerminal() bool {
+	return s.isTerminal.GetValue()
+}
+
+func (s *Spinner) printSuccess(message string, args ...interface{}) {
+	if s.IsTerminal() {
+		color.HiGreen(message, args)
+	} else {
+		fmt.Printf(message, args)
+	}
+
 }
 
 // Start the spinner!
 func (s *Spinner) Start(optionalMessage ...string) {
 
 	// Error if trying to start an already running spinner.
-	if s.running {
-		s.Error("Tried to start a running spinner with message: " + s.message)
+	if s.getRunning() == true {
+		s.Error("Tried to start a running spinner with message: " + s.getMessage())
 		return
 	}
+
 	// If we have a message, set it
 	if len(optionalMessage) > 0 {
-		s.message = optionalMessage[0]
+		s.setMessage(optionalMessage[0])
 	}
 
 	// make it look tidier.
 	hideCursor()
 
 	// Store the fact we are now running.
-	s.running = true
+	s.setRunning(true)
 
 	// Handle ctrl-c
-	go func() {
+	go func(stopChan chan struct{}) {
 		sigchan := make(chan os.Signal, 10)
 		signal.Notify(sigchan, os.Interrupt)
 		<-sigchan
-		s.Error(s.abortMessage)
-		showCursor()
+		// Notify and clean up
+		s.stopChan <- struct{}{}
+		fmt.Println("")
+		if s.IsTerminal() {
+			color.HiRed("\r%s %s", s.getErrorSymbol(), s.getAbortMessage())
+		} else {
+			fmt.Printf("%s %s", s.getErrorSymbol(), s.getAbortMessage())
+		}
 		os.Exit(1)
-	}()
+	}(s.stopChan)
+
+	// Setup Resize
+	resizechan := make(chan os.Signal, 10)
+	signal.Notify(resizechan, syscall.SIGWINCH)
 
 	// spawn off a goroutine to handle the animation.
-	go func() {
+	go func(resizechan chan os.Signal) {
 
-		// Start at the first frame.
-		frameNumber := 0
-
-		// Setup frame ticker.
-		ticker := time.NewTicker(time.Millisecond * time.Duration(s.spinSpeed)).C
+		ticker := time.NewTicker(time.Millisecond * time.Duration(s.spinSpeed.GetValue()))
+		err := s.updateTermSize()
+		if err != nil {
+			fmt.Println(err)
+		}
 
 		// Let's go!
 		for {
 			select {
 			// For each frame tick
-			case <-ticker:
+			case <-ticker.C:
 				// Rewind to start of line and print the current frame and message.
-				// Note: We don't fully clear the line here as this causes flickering
-				// under windows
-				fmt.Printf("\r")
-				s.currentLine = fmt.Sprintf("%s %s", s.spinFrames[frameNumber], s.message)
-				fmt.Printf(s.currentLine)
+				// Note: We don't fully clear the line here as this causes flickering.
+				if s.IsTerminal() || len(s.getCurrentLine()) == 0 {
+					fmt.Printf("\r")
+					var line = fmt.Sprintf("%s %s", s.getNextSpinnerFrame(), s.getMessage())
+					w := s.termWidth.GetValue()
+					var printLine = line
+					if len(line) > w {
+						printLine = string([]rune(line)[:w])
+						s.clearCurrentLine()
+					}
+					fmt.Printf(printLine)
+					s.setCurrentLine(line)
 
-				// Move to next spinner frame and if we hit the end, loop to the start.
-				frameNumber++
-				frameNumber = frameNumber % len(s.spinFrames)
+					// Do we need to update the ticker?
+					if s.speedUpdated.GetValue() == true {
+						ticker.Stop()
+						ticker = time.NewTicker(time.Millisecond * time.Duration(s.spinSpeed.GetValue()))
+					}
+				}
+
+			// If we resize
+			case <-resizechan:
+				err := s.updateTermSize()
+				if err != nil {
+					fmt.Println(err)
+				}
 
 			// If we get a stop signal
 			case <-s.stopChan:
 
 				// Store the fact we aren't running
-				s.running = false
+				s.setRunning(false)
 
 				// Quit the animation
 				return
 			}
 		}
-	}()
+	}(resizechan)
 }
 
 // stop will stop the spinner.
@@ -193,7 +306,7 @@ func (s *Spinner) Start(optionalMessage ...string) {
 // Error status will print the message in red.
 func (s *Spinner) stop(message ...string) {
 
-	var finalMessage = s.message
+	var finalMessage = s.getMessage()
 
 	// If we have an optional message, save it.
 	if len(message) > 0 {
@@ -201,7 +314,7 @@ func (s *Spinner) stop(message ...string) {
 	}
 
 	// Ensure we are running before issuing stop signal.
-	if s.running {
+	if s.running.GetValue() {
 		// Issue stop signal to animation.
 		s.stopChan <- struct{}{}
 	} else {
@@ -215,9 +328,9 @@ func (s *Spinner) stop(message ...string) {
 
 	// Output the symbol and message depending on the status code.
 	if s.exitStatus == errorStatus {
-		color.HiRed("\r%s %s", s.errorSymbol, finalMessage)
+		color.HiRed("\r%s %s", s.getErrorSymbol(), finalMessage)
 	} else {
-		color.HiGreen("\r%s %s", s.successSymbol, finalMessage)
+		color.HiGreen("\r%s %s", s.getSuccessSymbol(), finalMessage)
 	}
 
 	// Show the cursor again

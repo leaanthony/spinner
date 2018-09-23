@@ -1,5 +1,9 @@
 # Releases
 
+## 0.5 
+Trim messages to fit console width
+Fixed race conditions: Dynamic updates safe
+
 ## 0.4 - 17 July 2018
 Added UpdateMessage(string)
 Handle ctrl-c interrupts

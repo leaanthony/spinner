@@ -21,6 +21,7 @@ Spinner is for giving the user visual feedback during processing in command line
   * Sensible defaults for non-VT100 systems
   * Smoooothe! (no ghost cursors, minimal text updates)
   * Minimal memory allocation (Reusable spinner)
+  * Graceful handling of Ctrl-C interrupts
 
 Tested on:
 
@@ -177,6 +178,18 @@ It's possible to reuse an existing spinner by calling the Restart(message string
   myspinner.Restart("Spinner reuse!")
   time.Sleep(time.Second * 2)
   myspinner.Success()
+```
+
+## Handling Ctrl-C Interrupts
+
+By default, Ctrl-C will error out the current spinner with the message "Aborted (ctrl-c)". A custom message can be set using SetAbortMessage(string).
+
+```
+	myspinner := spinner.New("💣 Tick...tick...tick...")
+	myspinner.SetAbortMessage("Defused!")
+	myspinner.Start()
+	time.Sleep(time.Second * 5)
+	myspinner.Success("💥 Boom!")
 ```
 
 ## Rationale

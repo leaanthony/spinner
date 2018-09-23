@@ -25,7 +25,13 @@ func hideCursor() {
 func (s *Spinner) clearCurrentLine() {
 	// *shudder*
 	fmt.Printf("\r")
-	for i := 0; i < len(s.currentLine); i++ {
+
+	// Get the current line length
+	s.locks[currentLineLock].Lock()
+	var length = len(s.currentLine)
+	s.locks[currentLineLock].Unlock()
+
+	for i := 0; i < length; i++ {
 		fmt.Printf(" ")
 	}
 	fmt.Printf("\r")

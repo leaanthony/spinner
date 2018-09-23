@@ -54,6 +54,37 @@ func main() {
 	time.Sleep(time.Second * 2)
 	a.Success()
 
+	// Spinner frame madness
+	a = spinner.New("Change spinners on the fly")
+	a.Start()
+	time.Sleep(time.Second * 2)
+	a.SetSpinFrames([]string{"+", "x", "X", "x"})
+	time.Sleep(time.Second * 2)
+	a.SetSpinFrames([]string{"\\", "|", "/", "-"})
+	time.Sleep(time.Second * 2)
+	a.SetSpinFrames([]string{"-->  ", " --> ", "  -->"})
+	time.Sleep(time.Second * 2)
+	a.Success()
+
+	// Spinner timer awesomeness
+	msg := "Change spinner timing on the fly: Normal"
+	a = spinner.New(msg)
+	a.Start()
+	time.Sleep(time.Second * 2)
+	msg += " Slow"
+	a.SetSpinSpeed(300)
+	a.UpdateMessage(msg)
+	time.Sleep(time.Second * 2)
+	msg += " Normal"
+	a.SetSpinSpeed(100)
+	a.UpdateMessage(msg)
+	time.Sleep(time.Second * 2)
+	msg += " Fast"
+	a.SetSpinSpeed(50)
+	a.UpdateMessage(msg)
+	time.Sleep(time.Second * 2)
+	a.Success(msg + ". Much Wow.")
+
 	// Spinner with no initial message
 	a = spinner.New()
 	a.Start("Message is now optional on Spinner creation")
@@ -117,4 +148,15 @@ func main() {
 	a.Error(`Test Error("")`)
 	a.Successf(`Test Successf("")`)
 	a.Errorf(`Test Errorf("")`)
+
+	// Interrupt handling
+	fmt.Println("")
+	fmt.Println("Interrupt handling. Hit Ctrl-C to stop bomb exploding!")
+	fmt.Println("")
+
+	a = spinner.New("💣 Tick...tick...tick...")
+	a.SetAbortMessage("Defused!")
+	a.Start()
+	time.Sleep(time.Second * 5)
+	a.Success("💥 Boom!")
 }

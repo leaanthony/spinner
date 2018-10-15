@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	isatty "github.com/go-isatty"
 	"github.com/leaanthony/synx"
+	isatty "github.com/mattn/go-isatty"
 )
 
 // Specialise the type
@@ -207,8 +207,19 @@ func (s *Spinner) printSuccess(message string, args ...interface{}) {
 // Start the spinner!
 func (s *Spinner) Start(optionalMessage ...string) {
 
-	// Error if trying to start an already running spinner.
-	if s.getRunning() == true {
+	// If we're trying to start an already running spinner,
+	// add a slight delay and retry. This allows the spinner
+	// to complete a previous stop command gracefully.
+	count := 0
+	maxCount := 10
+	for s.getRunning() == true && count < maxCount {
+		//
+		time.Sleep(time.Millisecond * 50)
+		count++
+	}
+
+	// Did we fail?
+	if count == maxCount {
 		s.Error("Tried to start a running spinner with message: " + s.getMessage())
 		return
 	}

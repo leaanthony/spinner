@@ -10,6 +10,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unicode/utf8"
 
 	"github.com/fatih/color"
 	"github.com/leaanthony/synx"
@@ -191,15 +192,16 @@ func (s *Spinner) getCurrentLine() string {
 	return s.currentLine.GetValue()
 }
 
+// IsTerminal returns true if the spinner is running in a terminal
 func (s *Spinner) IsTerminal() bool {
 	return s.isTerminal.GetValue()
 }
 
 func (s *Spinner) printSuccess(message string, args ...interface{}) {
 	if s.IsTerminal() {
-		color.HiGreen(message, args)
+		color.HiGreen(message, args...)
 	} else {
-		fmt.Printf(message, args)
+		fmt.Printf(message, args...)
 	}
 
 }
@@ -276,7 +278,7 @@ func (s *Spinner) Start(optionalMessage ...string) {
 					var line = fmt.Sprintf("%s %s", s.getNextSpinnerFrame(), s.getMessage())
 					w := s.termWidth.GetValue()
 					var printLine = line
-					if len(line) > w {
+					if utf8.RuneCountInString(line) > w {
 						printLine = string([]rune(line)[:w])
 						s.clearCurrentLine()
 					}

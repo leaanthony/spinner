@@ -1,8 +1,9 @@
 # Releases
 
-## 0.5 
-Trim messages to fit console width
-Fixed race conditions: Dynamic updates safe
+## 0.5.0 - 23 Nov 2018
+* Trim messages to fit console width
+  * Attempts to handle console resizes
+* Fixed race conditions: Dynamic updates safe
 
 ## 0.4 - 17 July 2018
 Added UpdateMessage(string)

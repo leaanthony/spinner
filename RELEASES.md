@@ -1,6 +1,6 @@
 # Releases
 
-## 0.5.0 - 23 Nov 2018
+## 0.5.0 - WIP
 * Trim messages to fit console width
   * Attempts to handle console resizes
 * Fixed race conditions: Dynamic updates safe

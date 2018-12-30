@@ -8,9 +8,7 @@ import (
 	"os/signal"
 	"runtime"
 	"strings"
-	"syscall"
 	"time"
-	"unicode/utf8"
 
 	"github.com/fatih/color"
 	"github.com/leaanthony/synx"
@@ -73,7 +71,7 @@ func NewSpinner(optionalMessage ...string) *Spinner {
 	if len(optionalMessage) > 0 {
 		message = optionalMessage[0]
 	}
-	return &Spinner{
+	result := &Spinner{
 		message:       synx.NewString(message),
 		stopChan:      make(chan struct{}),
 		speedUpdated:  synx.NewBool(true),
@@ -86,9 +84,10 @@ func NewSpinner(optionalMessage ...string) *Spinner {
 		abortMessage:  synx.NewString("Aborted."),
 		frameNumber:   0,
 		running:       synx.NewBool(false),
-		currentLine:   synx.NewString(""),
 		isTerminal:    synx.NewBool(isatty.IsTerminal(os.Stdout.Fd())),
 	}
+
+	return result
 }
 
 // New is solely here to make code cleaner for importers.
@@ -130,6 +129,12 @@ func (s *Spinner) getNextSpinnerFrame() (result string) {
 	return
 }
 
+func (s *Spinner) getCurrentSpinnerFrame() (result string) {
+	s.frameNumber = s.frameNumber % s.spinFrames.Length()
+	result = s.spinFrames.GetElement(s.frameNumber)
+	return result
+}
+
 // SetSpinSpeed sets the speed of the spinner animation.
 // The lower the value, the faster the spin.
 func (s *Spinner) SetSpinSpeed(ms int) {
@@ -149,14 +154,12 @@ func (s *Spinner) getSpinSpeed() (ms int) {
 // UpdateMessage sets the spinner message.
 // Can be flickery if not appending so use with care.
 func (s *Spinner) UpdateMessage(message string) {
-	if s.IsTerminal() {
-		// Clear line if this isn't an append.
-		// for smoother screen updates.
-		if strings.Index(message, s.getMessage()) != 0 {
-			s.clearCurrentLine()
-		}
-		s.setMessage(message)
+	// Clear line if this isn't an append.
+	// for smoother screen updates.
+	if strings.Index(message, s.getMessage()) != 0 {
+		s.clearCurrentLine()
 	}
+	s.setMessage(message)
 }
 
 // SetAbortMessage sets the message that gets printed when
@@ -185,25 +188,8 @@ func (s *Spinner) setRunning(value bool) {
 	s.running.SetValue(value)
 }
 
-func (s *Spinner) setCurrentLine(line string) {
-	s.currentLine.SetValue(line)
-}
-func (s *Spinner) getCurrentLine() string {
-	return s.currentLine.GetValue()
-}
-
-// IsTerminal returns true if the spinner is running in a terminal
-func (s *Spinner) IsTerminal() bool {
-	return s.isTerminal.GetValue()
-}
-
 func (s *Spinner) printSuccess(message string, args ...interface{}) {
-	if s.IsTerminal() {
-		color.HiGreen(message, args...)
-	} else {
-		fmt.Printf(message, args...)
-	}
-
+	color.HiGreen(message, args...)
 }
 
 // Start the spinner!
@@ -245,26 +231,14 @@ func (s *Spinner) Start(optionalMessage ...string) {
 		// Notify and clean up
 		s.stopChan <- struct{}{}
 		fmt.Println("")
-		if s.IsTerminal() {
-			color.HiRed("\r%s %s", s.getErrorSymbol(), s.getAbortMessage())
-		} else {
-			fmt.Printf("%s %s", s.getErrorSymbol(), s.getAbortMessage())
-		}
+		color.HiRed("\r%s %s", s.getErrorSymbol(), s.getAbortMessage())
 		os.Exit(1)
 	}(s.stopChan)
 
-	// Setup Resize
-	resizechan := make(chan os.Signal, 10)
-	signal.Notify(resizechan, syscall.SIGWINCH)
-
 	// spawn off a goroutine to handle the animation.
-	go func(resizechan chan os.Signal) {
+	go func() {
 
 		ticker := time.NewTicker(time.Millisecond * time.Duration(s.spinSpeed.GetValue()))
-		err := s.updateTermSize()
-		if err != nil {
-			fmt.Println(err)
-		}
 
 		// Let's go!
 		for {
@@ -273,30 +247,13 @@ func (s *Spinner) Start(optionalMessage ...string) {
 			case <-ticker.C:
 				// Rewind to start of line and print the current frame and message.
 				// Note: We don't fully clear the line here as this causes flickering.
-				if s.IsTerminal() || len(s.getCurrentLine()) == 0 {
-					fmt.Printf("\r")
-					var line = fmt.Sprintf("%s %s", s.getNextSpinnerFrame(), s.getMessage())
-					w := s.termWidth.GetValue()
-					var printLine = line
-					if utf8.RuneCountInString(line) > w {
-						printLine = string([]rune(line)[:w])
-						s.clearCurrentLine()
-					}
-					fmt.Printf(printLine)
-					s.setCurrentLine(line)
+				fmt.Printf("\r")
+				fmt.Printf("%s %s", s.getNextSpinnerFrame(), s.getMessage())
 
-					// Do we need to update the ticker?
-					if s.speedUpdated.GetValue() == true {
-						ticker.Stop()
-						ticker = time.NewTicker(time.Millisecond * time.Duration(s.spinSpeed.GetValue()))
-					}
-				}
-
-			// If we resize
-			case <-resizechan:
-				err := s.updateTermSize()
-				if err != nil {
-					fmt.Println(err)
+				// Do we need to update the ticker?
+				if s.speedUpdated.GetValue() == true {
+					ticker.Stop()
+					ticker = time.NewTicker(time.Millisecond * time.Duration(s.spinSpeed.GetValue()))
 				}
 
 			// If we get a stop signal
@@ -309,7 +266,7 @@ func (s *Spinner) Start(optionalMessage ...string) {
 				return
 			}
 		}
-	}(resizechan)
+	}()
 }
 
 // stop will stop the spinner.

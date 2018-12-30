@@ -154,9 +154,9 @@ func main() {
 	fmt.Println("Interrupt handling. Hit Ctrl-C to stop bomb exploding!")
 	fmt.Println("")
 
-	a = spinner.New("💣 Tick...tick...tick...")
+	a = spinner.New("💣  Tick...tick...tick...")
 	a.SetAbortMessage("Defused!")
 	a.Start()
 	time.Sleep(time.Second * 5)
-	a.Success("💥 Boom!")
+	a.Success("💥  Boom!")
 }

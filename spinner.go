@@ -287,10 +287,6 @@ func (s *Spinner) stop(message ...string) {
 	if s.running.GetValue() {
 		// Issue stop signal to animation.
 		s.stopChan <- struct{}{}
-	} else {
-		// We tried to stop a non-running spinner.
-		s.exitStatus = errorStatus
-		finalMessage = finalMessage + " (Attempted to stop non-running spinner)"
 	}
 
 	// Clear the line, because a new message may be shorter than the original.

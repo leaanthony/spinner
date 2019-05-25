@@ -9,17 +9,11 @@ import (
 )
 
 func showCursor() {
-	err := wincursor.Show()
-	if err != nil {
-		panic(err)
-	}
+	wincursor.Show()
 }
 
 func hideCursor() {
-	err := wincursor.Hide()
-	if err != nil {
-		panic(err)
-	}
+	wincursor.Hide()
 }
 
 func (s *Spinner) clearCurrentLine() {

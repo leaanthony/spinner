@@ -164,22 +164,6 @@ By default, the spinner used is the spinning bar animation on Windows and the sn
   myspinner.Success()
 ```
 
-### Resuse Spinner
-
-It's possible to reuse an existing spinner by calling the Restart(message string) method. This restarts the spinner with the given message.
-
-```
-  myspinner := spinner.New("Processing images")
-  myspinner.SetSpinFrames([]string{"^", ">", "v", "<"})
-  myspinner.Start()
-  time.Sleep(time.Second * 2)
-  myspinner.Success()
-
-  myspinner.Restart("Spinner reuse!")
-  time.Sleep(time.Second * 2)
-  myspinner.Success()
-```
-
 ## Handling Ctrl-C Interrupts
 
 By default, Ctrl-C will error out the current spinner with the message "Aborted (ctrl-c)". A custom message can be set using SetAbortMessage(string).

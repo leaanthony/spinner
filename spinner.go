@@ -46,21 +46,22 @@ func getStatusSymbols() (successSymbol, errorSymbol string) {
 
 // Spinner defines our spinner data.
 type Spinner struct {
-	message       *synx.String      // message to display
-	stopChan      chan struct{}     // exit channel
-	speedUpdated  *synx.Bool        // Indicates speed has been updated
-	exitStatus    status            // Status of exit
-	successSymbol *synx.String      // Symbol printed when Success() called
-	errorSymbol   *synx.String      // Symbol printed when Error() called
-	spinFrames    *synx.StringSlice // Spinset frames
-	frameNumber   int               // Current frame [default 0]
-	termWidth     *synx.Int         // Terminal width
-	termHeight    *synx.Int         // Terminal Height
-	spinSpeed     *synx.Int         // Delay between spinner updates in milliseconds [default 100ms]
-	currentLine   *synx.String      // The current line being displayed
-	running       *synx.Bool        // Indicates if the spinner is running
-	abortMessage  *synx.String      // Printed when handling ctrl-c interrupt
-	isTerminal    *synx.Bool        // Flag indicating if we are outputting to terminal
+	message         *synx.String      // message to display
+	stopChan        chan struct{}     // exit channel
+	speedUpdated    *synx.Bool        // Indicates speed has been updated
+	exitStatus      status            // Status of exit
+	successSymbol   *synx.String      // Symbol printed when Success() called
+	errorSymbol     *synx.String      // Symbol printed when Error() called
+	spinFrames      *synx.StringSlice // Spinset frames
+	frameNumber     int               // Current frame [default 0]
+	termWidth       *synx.Int         // Terminal width
+	termHeight      *synx.Int         // Terminal Height
+	spinSpeed       *synx.Int         // Delay between spinner updates in milliseconds [default 100ms]
+	currentLine     *synx.String      // The current line being displayed
+	running         *synx.Bool        // Indicates if the spinner is running
+	abortMessage    *synx.String      // Printed when handling ctrl-c interrupt
+	isTerminal      *synx.Bool        // Flag indicating if we are outputting to terminal
+	exitOnInterrupt *synx.Bool        // Indicates the spinner will os.Exit on interrupt
 }
 
 // NewSpinner creates a new spinner and sets up the default values.
@@ -72,19 +73,20 @@ func NewSpinner(optionalMessage ...string) *Spinner {
 		message = optionalMessage[0]
 	}
 	result := &Spinner{
-		message:       synx.NewString(message),
-		stopChan:      make(chan struct{}),
-		speedUpdated:  synx.NewBool(true),
-		successSymbol: synx.NewString(successSymbol),
-		errorSymbol:   synx.NewString(errorSymbol),
-		spinFrames:    synx.NewStringSlice(getDefaultSpinnerFrames()),
-		spinSpeed:     synx.NewInt(100),
-		termWidth:     synx.NewInt(1),
-		termHeight:    synx.NewInt(1),
-		abortMessage:  synx.NewString("Aborted."),
-		frameNumber:   0,
-		running:       synx.NewBool(false),
-		isTerminal:    synx.NewBool(isatty.IsTerminal(os.Stdout.Fd())),
+		message:         synx.NewString(message),
+		stopChan:        make(chan struct{}),
+		speedUpdated:    synx.NewBool(true),
+		successSymbol:   synx.NewString(successSymbol),
+		errorSymbol:     synx.NewString(errorSymbol),
+		spinFrames:      synx.NewStringSlice(getDefaultSpinnerFrames()),
+		spinSpeed:       synx.NewInt(100),
+		termWidth:       synx.NewInt(1),
+		termHeight:      synx.NewInt(1),
+		abortMessage:    synx.NewString("Aborted."),
+		frameNumber:     0,
+		running:         synx.NewBool(false),
+		isTerminal:      synx.NewBool(isatty.IsTerminal(os.Stdout.Fd())),
+		exitOnInterrupt: synx.NewBool(true),
 	}
 
 	return result
@@ -187,6 +189,13 @@ func (s *Spinner) getRunning() bool {
 func (s *Spinner) setRunning(value bool) {
 	s.running.SetValue(value)
 }
+func (s *Spinner) getExitOnInterrupt() bool {
+	return s.exitOnInterrupt.GetValue()
+}
+
+func (s *Spinner) SetExitOnInterrupt(value bool) {
+	s.exitOnInterrupt.SetValue(value)
+}
 
 func (s *Spinner) printSuccess(message string, args ...interface{}) {
 	color.HiGreen(message, args...)
@@ -194,7 +203,6 @@ func (s *Spinner) printSuccess(message string, args ...interface{}) {
 
 // Start the spinner!
 func (s *Spinner) Start(optionalMessage ...string) {
-
 	// If we're trying to start an already running spinner,
 	// add a slight delay and retry. This allows the spinner
 	// to complete a previous stop command gracefully.
@@ -232,7 +240,9 @@ func (s *Spinner) Start(optionalMessage ...string) {
 		s.stopChan <- struct{}{}
 		fmt.Println("")
 		color.HiRed("\r%s %s", s.getErrorSymbol(), s.getAbortMessage())
-		os.Exit(1)
+		if s.getExitOnInterrupt() {
+			os.Exit(1)
+		}
 	}(s.stopChan)
 
 	// spawn off a goroutine to handle the animation.
